@@ -1,0 +1,271 @@
+---
+title: "US Tuition Fees at Public Institutions"
+Date: 15th Januray 2019
+Author: Anushree1001
+output:  rmarkdown::github_document
+---
+## Data Source and Background
+
+The data was obtained from CollegeBoard. (Source Link:https://research.collegeboard.org/trends/college-pricing/resource-library)
+The data is in excel format and contains cost associate with one year of undergraduate study in the U.S. and how those costs have changed over time at the following types of institutions, or sectors. 
+
+## Data  characteristics
+
+The data file contains multiple sheets but for the the purpose of this project we will pick the sheet named "Table 5" and save it as CSV.
+This sheet contains Average Published TuitionFees at Public Institutions by State ranging from the years 2004-2020. 
+
+## Data  variables
+
+This data contains:
+
+1. State Names
+2. Public Two-Year In-District Tuition Fees over a course of one year in current dollar rate
+3. Public Two-Year In-District Tuition Fees over a course of one year in dollar rate during 2019
+4. Public Four-Year In-State Tuition and Fees over a course of one year in current dollar rate
+5. Public Four-Year In-State Tuition and Fees over a course of one year in during 2019
+
+More of the data summary can be seen later.
+    
+    
+## Loading Data
+
+```{r message=FALSE, warning=FALSE ,echo = TRUE}
+collegepricing.df <- read.delim(file="trends-college-pricing-data.csv",header = TRUE, stringsAsFactors = FALSE, sep = ",",skip =2)
+
+knitr::kable(head(collegepricing.df[, 1:10]), "markdown")
+```
+
+## Why is this data untidy?
+
+
+
+```{r message=FALSE, warning=FALSE ,echo = TRUE}
+
+knitr::kable(head(collegepricing.df[, 1:10]), "markdown")
+```
+
+This data is untidy because it voilates the following principles of tidy data: Each variable must have its own column.
+and Each observation must have its own row.As we can see above the year ranges don't have one dedicated column and the prices don't have their own rows. That is why we need to clean up this data.
+
+
+## Data Summary
+
+Data Summary for seeing the type of data i.e. string or numeric
+
+```{r message=FALSE, warning=FALSE ,echo = TRUE}
+str(collegepricing.df)
+```
+
+
+ Summary for seeing various factors like mean:
+
+```{r message=FALSE, warning=FALSE ,echo = TRUE}
+summary(collegepricing.df)
+```
+
+
+
+
+
+## Data cleaning using Tidyr 
+
+1. Changing column names and removing unecessary columns
+
+```{r message=FALSE, warning=FALSE ,echo = TRUE}
+#install.packages("tidyverse")
+library(tidyverse)
+collegepricing.df <- collegepricing.df %>% select(-X,-contains("Change"))
+collegepricing.df <-collegepricing.df %>% rename(State = In.2019.Dollars)
+knitr::kable(head(collegepricing.df[, 1:10]), "markdown")
+
+
+```
+
+2. Splitting data based on Dollar Values and Distric and State
+
+```{r message=FALSE, warning=FALSE ,echo = TRUE}
+dollars2019.df <- collegepricing.df[1:52,]
+dollarscurrent.df <- collegepricing.df[55:106,]
+
+dollars2019.district.df <- dollars2019.df %>% select(State, 2:17)
+dollars2019.state.df <- dollars2019.df %>% select(State, 18:33)
+
+
+
+dollarscurrent.district.df <- dollarscurrent.df %>% select(State, 2:17)
+dollarscurrent.state.df <- dollarscurrent.df %>% select(State, 18:33)
+
+knitr::kable(head(dollars2019.state.df[, 1:15]), "markdown")
+
+```
+
+
+3. Gathering Data by college years 
+
+```{r message=FALSE, warning=FALSE ,echo = TRUE}
+dollars2019.district.df <- dollars2019.district.df %>% gather(key = 'College_Year', value = "In-District 2 Yr. Tuition Fee in 2019 Dollars",-State)
+dollars2019.state.df <- dollars2019.state.df %>% gather(key = 'College_Year', value = "In-State 4 Yr. Tuition Fee in 2019 Dollars", -State)
+
+
+dollarscurrent.district.df  <- dollarscurrent.district.df  %>% gather(key = 'College_Year', value = "In-District 2 Yr. Tuition Fee in current Dollars",-State)
+dollarscurrent.state.df <- dollarscurrent.state.df %>% gather(key = 'College_Year', value = "In-State 4 Yr. Tuition Fee in current Dollars", -State)
+knitr::kable(head(dollars2019.state.df), "markdown")
+
+```
+
+4. Cleaning column names 
+
+    +Cleaning column names for Tables with DOllar value of 2019 TUtion Fee
+
+```{r message=FALSE, warning=FALSE ,echo = TRUE}
+dollars2019.district.df$College_Year <- str_replace_all(dollars2019.district.df$College_Year,"X","")
+dollars2019.district.df$College_Year <- str_trim(str_replace_all(dollars2019.district.df$College_Year,"\\.","-"))
+
+dollars2019.state.df$College_Year <- str_replace_all(dollars2019.state.df$College_Year,"X","")
+dollars2019.state.df$College_Year <- str_trim(str_replace_all(dollars2019.state.df$College_Year,"\\.","-"))
+dollars2019.state.df$College_Year <- str_trim(str_replace_all(dollars2019.state.df$College_Year,"-05-1","-05"))
+dollars2019.state.df$College_Year <- str_trim(str_replace_all(dollars2019.state.df$College_Year,"-06-1","-06"))
+dollars2019.state.df$College_Year <- str_trim(str_replace_all(dollars2019.state.df$College_Year,"-07-1","-07"))
+dollars2019.state.df$College_Year <- str_trim(str_replace_all(dollars2019.state.df$College_Year,"-08-1","-08"))
+dollars2019.state.df$College_Year <- str_trim(str_replace_all(dollars2019.state.df$College_Year,"-09-1","-09"))
+dollars2019.state.df$College_Year <- str_trim(str_replace_all(dollars2019.state.df$College_Year,"-10-1","-10"))
+dollars2019.state.df$College_Year <- str_trim(str_replace_all(dollars2019.state.df$College_Year,"-11-1","-11"))
+dollars2019.state.df$College_Year <- str_trim(str_replace_all(dollars2019.state.df$College_Year,"-12-1","-12"))
+dollars2019.state.df$College_Year <- str_trim(str_replace_all(dollars2019.state.df$College_Year,"-13-1","-13"))
+dollars2019.state.df$College_Year <- str_trim(str_replace_all(dollars2019.state.df$College_Year,"-14-1","-14"))
+dollars2019.state.df$College_Year <- str_trim(str_replace_all(dollars2019.state.df$College_Year,"-15-1","-15"))
+dollars2019.state.df$College_Year <- str_trim(str_replace_all(dollars2019.state.df$College_Year,"-16-1","-16"))
+dollars2019.state.df$College_Year <- str_trim(str_replace_all(dollars2019.state.df$College_Year,"-17-1","-17"))
+dollars2019.state.df$College_Year <- str_trim(str_replace_all(dollars2019.state.df$College_Year,"-18-1","-18"))
+dollars2019.state.df$College_Year <- str_trim(str_replace_all(dollars2019.state.df$College_Year,"-19-1","-19"))
+dollars2019.state.df$College_Year <- str_trim(str_replace_all(dollars2019.state.df$College_Year,"-20-1","-20"))
+
+
+
+knitr::kable(head(dollars2019.state.df), "markdown")
+```
+
+
+      +Cleaning column names for Tables with Current Dollar Value TUtion Fee
+      
+```{r message=FALSE, warning=FALSE ,echo = TRUE}
+dollarscurrent.district.df$College_Year <- str_replace_all(dollarscurrent.district.df$College_Year,"X","")
+dollarscurrent.district.df$College_Year <- str_trim(str_replace_all(dollarscurrent.district.df$College_Year,"\\.","-"))
+
+
+dollarscurrent.state.df$College_Year <- str_replace_all(dollarscurrent.state.df$College_Year,"X","")
+dollarscurrent.state.df$College_Year <- str_trim(str_replace_all(dollarscurrent.state.df$College_Year,"\\.","-"))
+dollarscurrent.state.df$College_Year <- str_trim(str_replace_all(dollarscurrent.state.df$College_Year,"-05-1","-05"))
+dollarscurrent.state.df$College_Year <- str_trim(str_replace_all(dollarscurrent.state.df$College_Year,"-06-1","-06"))
+dollarscurrent.state.df$College_Year <- str_trim(str_replace_all(dollarscurrent.state.df$College_Year,"-07-1","-07"))
+dollarscurrent.state.df$College_Year <- str_trim(str_replace_all(dollarscurrent.state.df$College_Year,"-08-1","-08"))
+dollarscurrent.state.df$College_Year <- str_trim(str_replace_all(dollarscurrent.state.df$College_Year,"-09-1","-09"))
+dollarscurrent.state.df$College_Year <- str_trim(str_replace_all(dollarscurrent.state.df$College_Year,"-10-1","-10"))
+dollarscurrent.state.df$College_Year <- str_trim(str_replace_all(dollarscurrent.state.df$College_Year,"-11-1","-11"))
+dollarscurrent.state.df$College_Year <- str_trim(str_replace_all(dollarscurrent.state.df$College_Year,"-12-1","-12"))
+dollarscurrent.state.df$College_Year <- str_trim(str_replace_all(dollarscurrent.state.df$College_Year,"-13-1","-13"))
+dollarscurrent.state.df$College_Year <- str_trim(str_replace_all(dollarscurrent.state.df$College_Year,"-14-1","-14"))
+dollarscurrent.state.df$College_Year <- str_trim(str_replace_all(dollarscurrent.state.df$College_Year,"-15-1","-15"))
+dollarscurrent.state.df$College_Year <- str_trim(str_replace_all(dollarscurrent.state.df$College_Year,"-16-1","-16"))
+dollarscurrent.state.df$College_Year <- str_trim(str_replace_all(dollarscurrent.state.df$College_Year,"-17-1","-17"))
+dollarscurrent.state.df$College_Year <- str_trim(str_replace_all(dollarscurrent.state.df$College_Year,"-18-1","-18"))
+dollarscurrent.state.df$College_Year <- str_trim(str_replace_all(dollarscurrent.state.df$College_Year,"-19-1","-19"))
+dollarscurrent.state.df$College_Year <- str_trim(str_replace_all(dollarscurrent.state.df$College_Year,"-20-1","-20"))
+
+knitr::kable(head(dollarscurrent.state.df), "markdown")
+```
+
+
+5. Combing  the data and converting the data type for the Fees
+
+```{r message=FALSE, warning=FALSE ,echo = TRUE}
+dollars2019DF <- inner_join(dollars2019.district.df,dollars2019.state.df)
+
+dollars2019DF$`In-District 2 Yr. Tuition Fee in 2019 Dollars` <- as.numeric(str_trim(str_replace_all(str_replace_all(dollars2019DF$`In-District 2 Yr. Tuition Fee in 2019 Dollars`,"N/A","$0"),"\\$|,","")))
+dollars2019DF$`In-State 4 Yr. Tuition Fee in 2019 Dollars` <- as.numeric(str_trim(str_replace_all(str_replace_all(dollars2019DF$`In-State 4 Yr. Tuition Fee in 2019 Dollars`,"N/A","$0"),"\\$|,","")))
+
+dollarscurrentDF <- inner_join(dollarscurrent.district.df,dollarscurrent.state.df)
+dollarscurrentDF$`In-District 2 Yr. Tuition Fee in current Dollars` <- as.numeric(str_trim(str_replace_all(str_replace_all(dollarscurrentDF$`In-District 2 Yr. Tuition Fee in current Dollars`,"N/A","$0"),"\\$|,","")))
+dollarscurrentDF$`In-State 4 Yr. Tuition Fee in current Dollars` <- as.numeric(str_trim(str_replace_all(str_replace_all(dollarscurrentDF$`In-State 4 Yr. Tuition Fee in current Dollars`,"N/A","$0"),"\\$|,","")))
+
+
+maindf<-inner_join(dollars2019DF,dollarscurrentDF)
+knitr::kable(head(maindf), "markdown")
+```
+
+
+## Tidy Data
+
+1. Untidy Data
+```{r message=FALSE, warning=FALSE ,echo = TRUE}
+knitr::kable(head(collegepricing.df[, 1:10]), "markdown")
+```
+
+2.Tidy Data
+```{r message=FALSE, warning=FALSE ,echo = TRUE}
+knitr::kable(head(maindf), "markdown")
+```
+
+
+We can see the difference by comparing the two tables. The untidy data didn't have columns for years. But now by gathering the data we have made columns for each year period. Additionally, the untidy data didn't have individual observations for the prices. By making separate columns for the prices the data is now tidy. 
+
+
+## Data Visualization
+
+1. USA National Average In-District 2 Years Tuition Feess(Dollar rate=2019)
+
+```{r message=FALSE, warning=FALSE ,echo = TRUE}
+nationalavg2019 <- maindf %>% group_by(College_Year) %>% summarize(`Avg. In-District 2 Yr. Tuition Fee in 2019 Dollars` = mean(`In-District 2 Yr. Tuition Fee in 2019 Dollars`),`Avg. In-State 4 Yr. Tuition Fee in 2019 Dollars` = mean(`In-State 4 Yr. Tuition Fee in 2019 Dollars`))
+
+theme_set(theme_classic())
+
+ggplot(data=nationalavg2019, aes(x=College_Year,y=`Avg. In-District 2 Yr. Tuition Fee in 2019 Dollars`, group=1)) +
+  geom_line(arrow = arrow(), color = "blue",size = 1.2)+
+  geom_point(color = "red", size = 3)+
+  #theme(axis.text.x=element_text(angle = 45, vjust = 0.5)) +
+  scale_fill_brewer(palette="Paired") + 
+  ggtitle("US National Avg. In-District 2 Years Tuition Feess Trend in 2019 Dollars") 
+
+
+```
+
+
+##### Pattern Observed:
+
+The graph above allows to see the overall trend of tution fees for pulbic two year in-district colleges. The graph above shows a steep rise in  tuiton fees of colleges from the year 2008-09. 
+
+
+
+```{r message=FALSE, warning=FALSE ,echo = TRUE}
+lastfiveyears <- maindf %>% select(State, College_Year,`In-State 4 Yr. Tuition Fee in current Dollars`) %>%
+                          filter(College_Year >= "2015-16") %>%  group_by(College_Year,State) %>% 
+                          summarise(`In-State 4 Yr. Tuition Fee in current Dollars`= sum(`In-State 4 Yr. Tuition Fee in current Dollars`)) %>% 
+                          arrange(College_Year,-`In-State 4 Yr. Tuition Fee in current Dollars`) %>% 
+                          mutate(rank = row_number()) %>% filter(rank<=5)
+
+theme_set(theme_classic())
+
+ggplot(lastfiveyears, aes(x = reorder(State,-`In-State 4 Yr. Tuition Fee in current Dollars`), y = `In-State 4 Yr. Tuition Fee in current Dollars`)) + 
+  geom_bar(stat = "identity",fill="blue") + 
+  geom_text(aes(label=paste0("$",round(`In-State 4 Yr. Tuition Fee in current Dollars`,0))), vjust=-0.5, color="black", position = position_dodge(0.9), size=3.5) +
+  scale_fill_brewer(palette="Paired") + 
+  ggtitle("Top 5 Most Expensive States in Last 5 Years") +
+  xlab("State") +  ylab ("In-State 4 Yr. Tuition Fee in current Dollars") +
+  facet_wrap(~College_Year)
+
+
+```
+
+
+
+##### Pattern Observed: 
+
+The above graph shows the top 5 most expensive states for  In-State 4 Yr. education with the current dollar rate for the last five years, .
+From the above graph we can see that New Hampshire,Vermont,Pennsylvania,New Jersey and Illinois are always ranked the most expensive states.
+
+
+
+
+
+
+
